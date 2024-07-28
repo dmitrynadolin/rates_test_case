@@ -84,6 +84,8 @@ public class FeedListenerService : BackgroundService
 
                 _logger.LogInformation("Received market price {Market}={Price}", reply.Market, reply.Price);
             }
+
+            return;
         }
     }
 
