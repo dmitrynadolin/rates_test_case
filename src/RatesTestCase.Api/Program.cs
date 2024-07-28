@@ -1,3 +1,4 @@
+using RatesTestCase.Api.Services;
 using TestCaseRates.Api;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddHostedService<FeedListenerService>();
+
+builder.Services.AddSingleton<WebSocketSessionManager>();
 
 var app = builder.Build();
 

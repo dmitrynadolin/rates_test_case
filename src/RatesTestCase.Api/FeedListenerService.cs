@@ -2,12 +2,14 @@
 using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using RatesTestCase.Api.Services;
 
 namespace TestCaseRates.Api;
 
 public class FeedListenerService : BackgroundService
 {
     private readonly ILogger<FeedListenerService> _logger;
+    private readonly WebSocketSessionManager _sessions;
     private readonly IHost _host;
 
     private static JsonSerializer _serializer = JsonSerializer.CreateDefault(new JsonSerializerSettings
@@ -19,9 +21,10 @@ public class FeedListenerService : BackgroundService
         }
     });
 
-    public FeedListenerService(ILogger<FeedListenerService> logger, IHost host)
+    public FeedListenerService(ILogger<FeedListenerService> logger, WebSocketSessionManager sessions, IHost host)
     {
         _logger = logger;
+        _sessions = sessions;
         _host = host;
     }
 
@@ -33,7 +36,12 @@ public class FeedListenerService : BackgroundService
         {
             var subsribeMessage = new SubscribeRequest()
             {
-                Params = { "btcusdt@aggTrade" }
+                Params =
+                {
+                    "btcusdt@aggTrade",
+                    "ethusdt@aggTrade",
+                    "solusdt@aggTrade"
+                },
             };
 
             using (var ms = new MemoryStream())
@@ -82,10 +90,8 @@ public class FeedListenerService : BackgroundService
             {
                 var reply = _serializer.Deserialize<AggTradeReply>(json);
 
-                _logger.LogInformation("Received market price {Market}={Price}", reply.Market, reply.Price);
+                _sessions.AcknowledgeAsync(reply.Market, reply.Price, stoppingToken);
             }
-
-            return;
         }
     }
 
