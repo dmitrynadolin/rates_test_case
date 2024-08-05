@@ -23,12 +23,10 @@ builder.Services.AddSingleton<ICurrencyRatesWriter>(sp => sp.GetService<CurrentR
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
 app.MapControllers();
 
 app.UseWebSockets();
