@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using RatesTestCase.Api.Model;
+using RatesTestCase.Api.Services;
 
 namespace RatesTestCase.Api.Controllers;
 
@@ -7,26 +9,36 @@ namespace RatesTestCase.Api.Controllers;
 [ApiController]
 public class RatesController : ControllerBase
 {
+    private readonly ICurrencyRatesReader _ratesService;
+
+    public RatesController(ICurrencyRatesReader ratesService)
+    {
+        _ratesService = ratesService;
+    }
+
     [HttpGet]
-    public async Task<MarketsResponse> Markets(int offset = 0, int limit = 10)
+    [ProducesResponseType<MarketsResponse>(200)]
+    public async Task<IActionResult> Pairs([FromQuery] int offset = 0, [FromQuery] int limit = 10)
     {
-        return new MarketsResponse
+        return Ok(new MarketsResponse
         {
-            ItemsCount = 0,
-        };
+            ItemsCount = await _ratesService.GetItemsCountAsync(),
+            Items = (await _ratesService.GetCurrentRatesAsync(offset, limit)).Select(r => r.Key).ToList()
+        });
     }
 
-    [HttpGet("{market}")]
-    public async Task<PriceResponse> Price(string market)
+    [HttpGet("{pair}")]
+    [ProducesResponseType<PriceResponse>(200)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> Price([FromRoute]string pair)
     {
-        return new PriceResponse(Market: market, Timestamp: DateTimeOffset.UtcNow.ToUnixTimeSeconds(), Price: 0);
+        var response = await _ratesService.GetRateAsync(pair);
+
+        if(response.Price == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(response);
     }
-}
-
-public record PriceResponse(string Market, long Timestamp, decimal Price);
-
-public class MarketsResponse
-{
-    public List<string> Items { get; } = [];
-    public int ItemsCount { get; set; }
 }
